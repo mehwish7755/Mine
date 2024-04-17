@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mine Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .game-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(5, 100px); /* 5 columns */
+            grid-gap: 5px;
+            margin-bottom: 10px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #ccc; /* Lighter background */
+            color: black; /* Change text color for better visibility */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: 1px solid #888; /* Adding a border for better visibility */
+            position: relative; /* Needed for positioning the message relative to this cell */
+        }
+        .message {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white background */
+            padding: 5px 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Drop shadow effect */
+            pointer-events: none; /* Makes the message not clickable */
+            display: none; /* Initially hidden */
+        }
+        select, button {
+            margin-top: 10px;
+            padding: 5px 10px;
+        }
+        button {
+            background-color: green; /* Green color for the bet button */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        img.mine-image {
+            max-width: 80px; /* Adjust maximum width */
+            max-height: 80px; /* Adjust maximum height */
+        }
+        img.leaf-image {
+            width: 80px; /* Adjust image size */
+            height: 80px; /* Adjust image size */
+            object-fit: contain; /* Ensure the entire image is visible */
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="board"></div>
+        <div>
+            <select id="mineCount">
+                <!-- Options will be added dynamically -->
+            </select>
+            <button id="betButton">Bet</button>
+        </div>
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        const board = document.querySelector('.board');
+        const mineCountSelector = document.getElementById('mineCount');
+        const betButton = document.getElementById('betButton');
+        const message = document.getElementById('message');
+        const totalCells = 25;
+        const cells = [];
+        let clicksAllowed = 0;
+
+        // Create cells
+        for (let i = 0; i < totalCells; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.onclick = function() {
+                if (clicksAllowed > 0) {
+                    revealMine.call(this);
+                    clicksAllowed--;
+                }
+            };
+            board.appendChild(cell);
+            cells.push(cell);
+        }
+
+        // Fill dropdown for mine count
+        for (let i = 1; i <= totalCells - 1; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i + ' Mines';
+            mineCountSelector.appendChild(option);
+        }
+
+        // Handle bet and reset/reveal mines
+        betButton.addEventListener('click', function() {
+            const mineCount = parseInt(mineCountSelector.value, 10);
+            clicksAllowed = mineCount; // User can only click this many times
+            resetBoard();
+            placeMines(mineCount);
+        });
+
+        function placeMines(mineCount) {
+            let placements = 0;
+            while (placements < mineCount) {
+                const index = Math.floor(Math.random() * totalCells);
+                if (!cells[index].dataset.mine) {
+                    cells[index].dataset.mine = 'true'; // Set mine
+                    placements++;
+                }
+            }
+        }
+
+        function resetBoard() {
+            cells.forEach(cell => {
+                cell.dataset.mine = '';
+                cell.innerHTML = '';
+                cell.style.backgroundColor = '#ccc'; // Reset to the default background color
+                cell.onclick = function() {
+                    if (clicksAllowed > 0) {
+                        revealMine.call(this);
+                        clicksAllowed--;
+                    }
+                };
+            });
+        }
+
+        function revealMine() {
+            if (this.dataset.mine === 'true') {
+                const img = document.createElement('img');
+                img.src = 'https://example.com/bomb.png'; // Link to your bomb image
+                img.className = 'mine-image';
+                this.appendChild(img);
+                this.style.backgroundColor = 'red';
+                
+                // Display mine image
+                const mineImg = document.createElement('img');
+                mineImg.src = 'https://cdn.vectorstock.com/i/500p/57/55/danger-bomb-vector-115755.avif'; // Link to your bomb image
+                mineImg.className = 'mine-image';
+                this.appendChild(mineImg);
+                
+                // Display message
+                message.textContent = 'Mine!';
+                message.style.display = 'block';
+                // Position the message near the revealed box
+                const rect = this.getBoundingClientRect();
+                message.style.top = (rect.top - 30) + 'px'; // Adjust the top position as needed
+                message.style.left = rect.left + 'px';
+                
+                // Disable click event handlers on all cells
+                cells.forEach(cell => {
+                    cell.onclick = null;
+                });
+            } else {
+                const leafImg = document.createElement('img');
+                leafImg.src = 'https://cdn.vectorstock.com/i/1000x1000/74/23/cartoon-minerals-icon-vector-38557423.webp'; // Link to your leaf image
+                leafImg.className = 'leaf-image';
+                this.appendChild(leafImg);
+                this.style.backgroundColor = 'green';
+            }
+        }
+    </script>
+</body>
+</html>
+
